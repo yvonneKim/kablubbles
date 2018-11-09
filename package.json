@@ -1,0 +1,13 @@
+{
+  "name": "kablubbles",
+  "version": "1.0.0",
+  "description": "Bubble game!",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC"
+}
