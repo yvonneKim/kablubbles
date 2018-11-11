@@ -1,11 +1,17 @@
-var renderer = PIXI.autoDetectRenderer(512, 512, {
-    transparent: true,
+var renderer = PIXI.autoDetectRenderer(800, 800, {
+    backgroundColor: 0x1099bb,
     resolution: 1,
 });
 
 document.getElementById('display').appendChild(renderer.view)
 
 var stage = new PIXI.Container();
+var background = new PIXI.Graphics();
+background.beginFill(0x1099bb);
+background.drawRect(0, 0, 800, 800);
+background.endFill();
+stage.addChild(background);
+
 
 PIXI.loader
     .add('pointer', 'images/pointer.png')
@@ -24,6 +30,13 @@ var bubbleSpeed = 5;
 
 function setup() {
     stage.interactive = 'true';
+    stage.on('mousedown', (e) => {
+        console.log(pointer.rotation);
+        shoot(pointer.rotation - rotateDegrees(90), {
+            x: pointer.position.x + Math.cos(pointer.rotation - rotateDegrees(90))*50,
+            y: pointer.position.y + Math.sin(pointer.rotation - rotateDegrees(90))*50
+        })
+    })
 
     // Add Explosion sprite
     var rect = new PIXI.Rectangle(0, 0, 130, 130);
@@ -80,13 +93,15 @@ function getPointerRotation() {
         renderer.plugins.interaction.mouse.global.y,
         pointer.x,
         pointer.y
-    ) + rotateDegrees(90);
+    )
 }
 
 function shoot(rotation, startPos) {
     var bubble = new PIXI.Sprite(
         PIXI.loader.resources['bubble'].texture
     );
+    bubble.anchor.set(0.5, 0.5);
+    bubble.scale.set(0.05, 0.05);
     bubble.x = startPos.x;
     bubble.y = startPos.y;
     bubble.rotation = rotation;
@@ -96,11 +111,16 @@ function shoot(rotation, startPos) {
 
 function animationLoop() {
     requestAnimationFrame(animationLoop);
-    pointer.rotation = getPointerRotation();
+    pointer.rotation = rotateToPoint(
+        renderer.plugins.interaction.mouse.global.x,
+        renderer.plugins.interaction.mouse.global.y,
+        pointer.x,
+        pointer.y
+    ) + rotateDegrees(90);
 
     for (var b = bubbles.length - 1; b >= 0; b--) {
-        bubble[b].x += Math.cos(bubble[b].rotation)*bubbleSpeed;
-        bubble[b].y += Math.sin(bubble[b].rotation)*bubbleSpeed;
+        bubbles[b].x += Math.cos(bubbles[b].rotation) * bubbleSpeed;
+        bubbles[b].y += Math.sin(bubbles[b].rotation) * bubbleSpeed;
     }
 
     renderer.render(stage);
