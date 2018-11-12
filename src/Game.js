@@ -1,3 +1,6 @@
+import p2 from 'p2';
+import * as PIXI from 'pixi.js';
+
 export default class Game {
   constructor() {
     this._renderer = PIXI.autoDetectRenderer(800, 800, {
@@ -5,12 +8,16 @@ export default class Game {
       resolution: 1,
     });
 
-    this.pointer;    
+    this.pointer;
     this.explosion;
+    this.box;
+    this.boxBody;
     this.bubbles = [];
 
     this._stage = new PIXI.Container();
     this._loader = new PIXI.loaders.Loader();
+    this._world = new p2.World();
+
 
     this.rotateToPoint = this.rotateToPoint.bind(this);
     this.rotateDegrees = this.rotateDegrees.bind(this);
@@ -37,6 +44,39 @@ export default class Game {
     const X_MIDDLE = this._renderer.width / 2;
     const Y_MIDDLE = this._renderer.height / 2;
 
+    // Add box (p2)
+    const boxShape = new p2.Box({ width: 2, height: 1 });
+    const boxBody = new p2.Body({
+      mass: 1,
+      position: [0, 2],
+      angularVelocity: 1
+    })
+    boxBody.addShape(boxShape);
+    this.boxBody = boxBody;
+    this._world.addBody(boxBody);
+
+    // ... (Pixi rendering)
+    var graphics = new PIXI.Graphics();
+    graphics.beginFill(0xff0000);
+    graphics.drawRect(
+      -boxShape.width / 2,
+      -boxShape.height / 2,
+      boxShape.width,
+      boxShape.height
+    );
+    this.box = graphics;
+    this._stage.addChild(graphics);
+
+    // Add plane
+    const planeShape = new p2.Plane();
+    const planeBody = new p2.Body({ position: [0, -1] });
+    planeBody.addShape(planeShape);
+    this._world.addBody(planeBody);
+
+    // Pixi.js zoom level
+    const zoom = 100;
+
+
     // Add background to stage
     var background = new PIXI.Graphics();
     background.beginFill(0x1099bb);
@@ -61,7 +101,7 @@ export default class Game {
     const newpointer = new PIXI.Sprite(
       this._loader.resources['pointer'].texture
     );
-    
+
     newpointer.scale.set(.1, .1);
     newpointer.anchor.set(0.5, 0.5);
     newpointer.x = X_MIDDLE;
@@ -96,6 +136,13 @@ export default class Game {
 
   update() {
     requestAnimationFrame(this.update);
+
+    // step forward in physics world
+    this._world.step(1/60);
+
+    this.box.position.x = this.boxBody.position[0];
+    this.box.position.y = this.boxBody.position[1];
+    this.box.rotation = this.boxBody.angle;
 
     // Update pointer rotation
     this.pointer.rotation = this.rotateToPoint(
