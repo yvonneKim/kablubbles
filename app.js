@@ -1,3 +1,3 @@
+import Game from './Game.js'
 
-
-kablubbles = new Game();
+const game = new Game();

@@ -1,35 +1,41 @@
-export class Game {
+export default class Game {
   constructor() {
     this._renderer = PIXI.autoDetectRenderer(800, 800, {
       backgroundColor: 0x1099bb,
       resolution: 1,
     });
 
-    this.pointer;
+    this.pointer;    
     this.explosion;
     this.bubbles = [];
 
     this._stage = new PIXI.Container();
     this._loader = new PIXI.loaders.Loader();
-    this.setup();
+
+    this.rotateToPoint = this.rotateToPoint.bind(this);
+    this.rotateDegrees = this.rotateDegrees.bind(this);
+    this.loadAssets = this.loadAssets.bind(this);
+    this.shoot = this.shoot.bind(this);
+    this.update = this.update.bind(this);
+    this.setup = this.setup.bind(this);
+
+    this.loadAssets();
 
     document.getElementById('display').appendChild(this._renderer.view);
     this.update();
   }
 
-  loadAssets() {
+  async loadAssets() {
     this._loader
       .add('pointer', 'images/pointer.png')
       .add('bubble', 'images/bubble.png')
       .add('explosion', 'images/explosions.png')
-      .load();
+      .load(this.setup);
   }
 
   setup() {
-    const X_MIDDLE = renderer.width / 2;
-    const Y_MIDDLE = renderer.height / 2;
-
-    this.loadAssets();
+    const X_MIDDLE = this._renderer.width / 2;
+    const Y_MIDDLE = this._renderer.height / 2;
 
     // Add background to stage
     var background = new PIXI.Graphics();
@@ -41,26 +47,31 @@ export class Game {
     // Add mousedown callback to stage
     this._stage.interactive = 'true';
     this._stage.on('mousedown', (e) => {
-      this.shoot(pointer.rotation - rotateDegrees(90), {
-        x: pointer.position.x + Math.cos(pointer.rotation - rotateDegrees(90)) * 50,
-        y: pointer.position.y + Math.sin(pointer.rotation - rotateDegrees(90)) * 50
+      this.shoot(this.pointer.rotation - this.rotateDegrees(90), {
+        x: this.pointer.position.x + Math.cos(this.pointer.rotation - this.rotateDegrees(90)) * 50,
+        y: this.pointer.position.y + Math.sin(this.pointer.rotation - this.rotateDegrees(90)) * 50
       })
     })
 
-    // Add pointer sprite
-    pointer = new PIXI.Sprite(
-      PIXI.loader.resources['pointer'].texture
-    );
+    var texture = this._loader.resources['pointer'].texture;
+    console.log(this._loader.resources['pointer']);
+    console.log(this._loader.resources['pointer'].texture);
 
-    pointer.scale.set(.1, .1);
-    pointer.anchor.set(0.5, 0.5);
-    pointer.x = X_MIDDLE;
-    pointer.y = Y_MIDDLE;
-    this._stage.addChild(pointer);
+    // Add pointer sprite
+    const newpointer = new PIXI.Sprite(
+      this._loader.resources['pointer'].texture
+    );
+    
+    newpointer.scale.set(.1, .1);
+    newpointer.anchor.set(0.5, 0.5);
+    newpointer.x = X_MIDDLE;
+    newpointer.y = Y_MIDDLE;
+    this.pointer = newpointer;
+    this._stage.addChild(newpointer);
 
     // Add Explosion sprite
     // var rect = new PIXI.Rectangle(0, 0, 130, 130);
-    // var texture = PIXI.loader.resources['explosion'].texture;
+    // var texture = this._loader.resources['explosion'].texture;
     // texture.frame = rect;
     // explosion = new PIXI.Sprite(texture);
     // explosion.x = X_MIDDLE
@@ -84,18 +95,18 @@ export class Game {
   }
 
   update() {
-    requestAnimationFrame(update);
+    requestAnimationFrame(this.update);
 
     // Update pointer rotation
-    this.pointer.rotation = rotateToPoint(
-      renderer.plugins.interaction.mouse.global.x,
-      renderer.plugins.interaction.mouse.global.y,
-      pointer.x,
-      pointer.y
-    ) + rotateDegrees(90);
+    this.pointer.rotation = this.rotateToPoint(
+      this._renderer.plugins.interaction.mouse.global.x,
+      this._renderer.plugins.interaction.mouse.global.y,
+      this.pointer.x,
+      this.pointer.y
+    ) + this.rotateDegrees(90);
 
     // Update bubble trajectories
-    for (var b = bubbles.length - 1; b >= 0; b--) {
+    for (var b = this.bubbles.length - 1; b >= 0; b--) {
       this.bubbles[b].x += Math.cos(this.bubbles[b].rotation) * 5;
       this.bubbles[b].y += Math.sin(this.bubbles[b].rotation) * 5;
     }
@@ -104,7 +115,6 @@ export class Game {
   }
 
   rotateToPoint(mx, my, px, py) {
-    var self = this;
     var dist_Y = my - py;
     var dist_X = mx - px;
     var angle = Math.atan2(dist_Y, dist_X);
@@ -117,7 +127,7 @@ export class Game {
 
   shoot(rotation, startPos) {
     var bubble = new PIXI.Sprite(
-      PIXI.loader.resources['bubble'].texture
+      this._loader.resources['bubble'].texture
     );
     bubble.anchor.set(0.5, 0.5);
     bubble.scale.set(0.05, 0.05);
